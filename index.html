@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gitlab tools</title>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
+  <script src="main.js"></script>
+</head>
+<body>
+
+  <h1>ISSUEを集計</h1>
+  <select id="milestone"></select>
+  <button class="btn btn-primary" onclick="getIssues()">送信</button>
+
+  <br>
+  <br>
+
+	<table class="table table-striped">
+		<thead>
+		  <tr>
+		  	<th>名前</th>
+		  	<th>ISSUEの数</th>
+		  	<th>estimate(h)</th>
+		  	<th>spend(h)</th>
+		  </tr>
+		</thead>
+		<tbody id="result">
+		</tbody>
+	</table>
+
+  <br>
+  <br>
+  <hr>
+
+  <h1>ISSUEを作成</h1>
+  <input type="text" id="issue" value="testIssue" />
+  <button class="btn btn-success" onclick="getTemplate()">作成</button>
+  <div id="createIssueResult" style="color:red"></div>
+
+</body>
+
+<script>
+  window.onload = function() {
+    getMilestoneList()
+    setDate()
+  }
+</script>
+
+</html>
