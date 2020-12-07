@@ -29,10 +29,36 @@
 		<tbody id="result">
 		</tbody>
 	</table>
+	
+	
+  <br>
+  
+  <h4>タグ別集計</h4>
+    <select id="project" onchange="changeIssueSummary()"></select>
+	<table class="table table-striped">
+		<thead>
+		  <tr>
+		  	<th>タグ名</th>
+		  	<th>ISSUEの数</th>
+		  	<th>estimate(h)</th>
+		  	<th>spend(h)</th>
+		  </tr>
+		</thead>
+		<tbody id="result-by-tags">
+		</tbody>
+	</table>
 
   <br>
   <br>
   <hr>
+
+  <h1>継続ISSUEを作成</h1>
+  <select id="issue"></select>
+  <button class="btn btn-success" onclick="getIssueById()">作成</button>
+  <div id="createIssueResultContinue" style="color:red"></div>
+
+	<br>
+	<br>
 
   <h1>ISSUEを作成</h1>
   <input type="text" id="issue" value="testIssue" />
@@ -43,6 +69,7 @@
 
 <script>
   window.onload = function() {
+    getProjectList()
     getMilestoneList()
     setDate()
   }
