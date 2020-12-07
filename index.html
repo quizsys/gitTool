@@ -33,12 +33,12 @@
 	
   <br>
   
-  <h4>タグ別集計</h4>
+  <h4>ラベル別集計</h4>
     <select id="project" onchange="changeIssueSummary()"></select>
 	<table class="table table-striped">
 		<thead>
 		  <tr>
-		  	<th>タグ名</th>
+		  	<th>ラベル名</th>
 		  	<th>ISSUEの数</th>
 		  	<th>estimate(h)</th>
 		  	<th>spend(h)</th>
@@ -54,7 +54,7 @@
 
   <h1>継続ISSUEを作成</h1>
   <select id="issue"></select>
-  <button class="btn btn-success" onclick="getIssueById()">作成</button>
+  <button class="btn btn-success" onclick="getIssueContinue()">作成</button>
   <div id="createIssueResultContinue" style="color:red"></div>
 
 	<br>

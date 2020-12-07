@@ -1,6 +1,6 @@
 //gitlabのtoken情報
 const TOKEN = ""
-const GIT_URL = ""
+const GIT_URL = "https://x.x.x.x/api/v4"
 var work
 var issueList
 
@@ -58,7 +58,7 @@ function writeResult(data){
 	console.log(data);
 
 	var array = {};
-	var tagArray = {};
+	var labelArray = {};
 	issueList = {}
 
 	for(var i in data){
@@ -70,6 +70,7 @@ function writeResult(data){
 		// issueのリストに追加
 		issueList[data[i].id] = {}
 		issueList[data[i].id].title = data[i].title
+		issueList[data[i].id].state = data[i].state
 		
 		
 		
@@ -102,20 +103,20 @@ function writeResult(data){
 		var project_id = data[i].project_id
 		
 		//初回
-		if(!tagArray[project_id]){
-			tagArray[project_id] = {}
+		if(!labelArray[project_id]){
+			labelArray[project_id] = {}
 		}
 
 		for(var j in labels){
-			if(!tagArray[project_id][labels[j]]) {
-				tagArray[project_id][labels[j]] = {}
-				tagArray[project_id][labels[j]].issue_count = 0
-				tagArray[project_id][labels[j]].time_estimate = 0
-				tagArray[project_id][labels[j]].total_time_spent = 0
+			if(!labelArray[project_id][labels[j]]) {
+				labelArray[project_id][labels[j]] = {}
+				labelArray[project_id][labels[j]].issue_count = 0
+				labelArray[project_id][labels[j]].time_estimate = 0
+				labelArray[project_id][labels[j]].total_time_spent = 0
 			}
-			tagArray[project_id][labels[j]].issue_count ++
-			tagArray[project_id][labels[j]].time_estimate += data[i].time_stats.time_estimate
-			tagArray[project_id][labels[j]].total_time_spent += data[i].time_stats.total_time_spent
+			labelArray[project_id][labels[j]].issue_count ++
+			labelArray[project_id][labels[j]].time_estimate += data[i].time_stats.time_estimate
+			labelArray[project_id][labels[j]].total_time_spent += data[i].time_stats.total_time_spent
 		}
 		
 	}
@@ -139,8 +140,8 @@ function writeResult(data){
 	
 	//タグ別一覧の合計を計算
 	var sumArray = {}
-	for(var i in tagArray){
-		for(var j in tagArray[i]){
+	for(var i in labelArray){
+		for(var j in labelArray[i]){
 		
 			console.log(j)
 			if(!sumArray[j]){
@@ -149,25 +150,28 @@ function writeResult(data){
 				sumArray[j].time_estimate = 0
 				sumArray[j].total_time_spent = 0
 			}
-			sumArray[j].issue_count += tagArray[i][j].issue_count
-			sumArray[j].time_estimate += tagArray[i][j].time_estimate
-			sumArray[j].total_time_spent += tagArray[i][j].total_time_spent
+			sumArray[j].issue_count += labelArray[i][j].issue_count
+			sumArray[j].time_estimate += labelArray[i][j].time_estimate
+			sumArray[j].total_time_spent += labelArray[i][j].total_time_spent
 					
 		}
 
 	
 	}
 	
-	tagArray[0] = sumArray
-	work = tagArray;
-	updateIssueTable(tagArray[0])
+	labelArray[0] = sumArray
+	work = labelArray;
+	updateIssueTable(labelArray[0])
 	
 	
 	
 	//Issue一覧を作成
 	html = "";
 	for(var i in issueList){
-		html += "<option value='" + i +"'>" + issueList[i].title + "</option>";
+		//openedのもののみ一覧化
+		if(issueList[i].state == "opened"){
+			html += "<option value='" + i +"'>" + issueList[i].title + "</option>";
+		}
 	}	
 	document.getElementById("issue").innerHTML = html;
 
@@ -365,9 +369,9 @@ function changeIssueSummary(){
 
 
 /**
-* 単発ISSUEを取得する
+* 継続ISSUEの情報を取得する
 */
-function getIssueById(){
+function getIssueContinue(){
 
 	var issue = document.getElementById("issue").value;
 
@@ -393,6 +397,7 @@ function createIssueContinue(data){
 	var issue_iid = data.iid
 	var title = data.title;
 	
+	//すでに継続issueだった場合、継続の文字を取り除く
 	var index = title.indexOf(" 継続#");
 	if(index != -1){
 		title = title.slice(0, index)
@@ -413,12 +418,13 @@ function createIssueContinue(data){
 function writecreateIssueResultContinue(data){
 
 		console.log(data)
-		var id = data.id;
+		var id = data.iid;
 		var title = data.title;
 		var html = "#" + id + " : " + title + " を作成しました"
 		document.getElementById("createIssueResultContinue").innerHTML = html;
 
 }
+
 
 
 console.log("read completed")
