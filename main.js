@@ -6,6 +6,7 @@ var mrList = []      // MRの一一覧
 var issuePage = 1              // issueのページ番号（100件以上になると1増やす）
 var mergeRequestPage = 1       // MRのページ番号（100件以上になると1増やす）
 var projectList = {}
+var labelChart
 
 /**
 * Ajax通信用のメソッド
@@ -233,15 +234,21 @@ function summaryTime(data){
     var labels = data[i].labels
 
     for(var j in labels){
+
+      // 特定のラベルは飛ばす
+      if(labels[j] == "To Do" || labels[j] == "Doing" || labels[j] == "Done" ){
+        continue;
+      }
+
       if(!labelArray[labels[j]]) {
         labelArray[labels[j]] = {}
         labelArray[labels[j]].issue_count = 0
         labelArray[labels[j]].time_estimate = 0
         labelArray[labels[j]].total_time_spent = 0
       }
-        labelArray[labels[j]].issue_count ++
-        labelArray[labels[j]].time_estimate += data[i].time_stats.time_estimate
-        labelArray[labels[j]].total_time_spent += data[i].time_stats.total_time_spent
+      labelArray[labels[j]].issue_count ++
+      labelArray[labels[j]].time_estimate += data[i].time_stats.time_estimate
+      labelArray[labels[j]].total_time_spent += data[i].time_stats.total_time_spent
     }
   }
   ret.array = array
@@ -313,7 +320,25 @@ function changeLabelName(){
     }
   }
 
-  document.getElementById("result-by-tags").innerHTML = updateIssueTable(array)
+  //グラフ表示するかどうか
+  var graphDisplayFlg = document.getElementById("graph-display-flg").checked
+
+  //初期化
+  if(labelChart){
+    labelChart.destroy()
+  }
+
+  if(graphDisplayFlg){
+    $("#label-table").css("display", "none")
+    //グラフ描画
+    createGraph(array)
+
+  } else {
+    $("#label-table").css("display", "")
+    // $("#label-chart").css("display", "none")
+    document.getElementById("result-by-tags").innerHTML = updateIssueTable(array)
+  }
+
 }
 
 
@@ -383,7 +408,7 @@ function writeProjectsList(data){
     html += "<option value='" + data[i].id +"'>" + data[i].name + "</option>";
   }
   document.getElementById("select-project").innerHTML = html;
-  
+
   var array = {}
   for(var i in data){
     array[data[i].id] = {}
@@ -401,7 +426,7 @@ function writeProjectsList(data){
 */
 function getTemplate(){
 
-  var issue_name = document.getElementById("issue-mnp").value
+  var issue_name = document.getElementById("issue-name").value
   if(issue_name == ""){
     document.getElementById("createIssueResult").innerHTML = "※※※ISSUEの名前を入力してください※※※";
     return
@@ -432,7 +457,7 @@ function createIssue(data){
 	console.log(data)
 
 	// var issue = document.getElementById("issue").value;
-  var issue = document.getElementById("issue-mnp").value
+  var issue = document.getElementById("issue-name").value
   var project_id = document.getElementById("select-project").value
   var milestone_id = document.getElementById("select-milestone").value
 
@@ -714,6 +739,96 @@ function createDetail(array, type){
   return content;
 }
 
+
+/***********************************************************
+* グラフ表示処理
+*************************************************************/
+
+var option = {
+  title: {
+    display: true,
+    text: 'ラベル別時間'
+  },
+  tooltips: {
+    mode: 'index',
+    intersect: false
+  },
+  responsive: true,
+  scales: {
+    xAxes: [{
+      stacked: true,
+      scaleLabel: {                 // 軸ラベル
+          display: true,            // 表示設定
+          labelString: 'ラベル',    // ラベル
+          fontSize: FONT_SIZE       // フォントサイズ
+      }
+    }],
+    yAxes: [{
+      stacked: true,
+      scaleLabel: {                 // 軸ラベル
+          display: true,            // 表示設定
+          labelString: '時間(h)',    // ラベル
+          fontSize: FONT_SIZE       // フォントサイズ
+      }
+    }]
+  }
+}
+
+/*
+* グラフの描画処理
+*/
+function createGraph(array){
+
+  // console.log(array)
+  var labels = []
+  var issueSpent = []
+  var issueEstimate = []
+  var mrSpent = []
+
+  for(var i in array){
+    labels.push(i);
+    issueSpent.push(round(array[i].total_time_spent/3600, 2));
+    issueEstimate.push(round(array[i].time_estimate/3600, 2));
+    mrSpent.push(round(array[i].merge_request_total_time_spent/3600, 2));
+  }
+
+  // console.log(labels, issueSpent, issueEstimate)
+
+  //グラフ作成処理（バーンアップ）
+  var ctx = document.getElementById("label-chart");
+  labelChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'estimate',
+          data: issueEstimate,
+          backgroundColor: "rgba(0,0,255,0.5)",
+          borderColor:"rgba(0,0,255,0.5)",
+          stack: 'Stack 1',
+        },
+        {
+          label: 'spend',
+          data: issueSpent,
+          backgroundColor: "rgba(255,0,0,0.5)",
+          borderColor:"rgba(255,0,0,0.5)",
+          stack: 'Stack 0',
+        },
+        {
+          label: 'spendMR',
+          data: mrSpent,
+          backgroundColor: "rgba(0,100,0,0.5)",
+          borderColor:"rgba(0,100,0,0.5)",
+          stack: 'Stack 0',
+        }
+      ],
+    },
+    options: option
+  });
+
+
+}
 
 
 /***********************************************************

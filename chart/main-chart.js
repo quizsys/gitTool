@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v4"   // このスクリプトのバージョン
+const RELEASE_VERSION = "v5"   // このスクリプトのバージョン
 
 //グローバル変数の宣言
 var dateRange
@@ -9,24 +9,8 @@ var dateList = [];
 var milestoneList;
 var milestoneNameList;
 var labelSearchStr;
-
-/*
-* ヘッダーを取得する
-*/
-function sendAjaxRequestHeader(url,request, successFunc, date){
-
-	$.ajax({
-		type: 'HEAD',
-		url : GIT_URL + url,
-		data: request,
-		cache: false,
-	}).done(function(data, status, xhr) {
-		// console.log(request);
-		successFunc(xhr.getAllResponseHeaders(), date)
-	}).fail(function(data, status, xhr){
-		alert("リクエスト時になんらかのエラーが発生しました：");
-	});
-}
+var burnDownChart
+var burnUpChart
 
 /**
 * Ajax通信用のメソッド
@@ -36,7 +20,7 @@ function sendAjaxRequestHeader(url,request, successFunc, date){
 * @param successFunc : リクエスト成功時に起動するfunction
 * @returns
 */
-function sendAjaxRequest(method, url, request, successFunc, failFunc){
+function sendAjaxRequest(method, url, request, successFunc, date){
 
     //ajaxでservletにリクエストを送信
     $.ajax({
@@ -48,15 +32,11 @@ function sendAjaxRequest(method, url, request, successFunc, failFunc){
     // 通信成功時
     .done( function(data) {
       console.log(url);
-      successFunc(data)
+      successFunc(data, date)
     })
     // 通信失敗時
 		 .fail( function(data) {
-      if(failFunc != undefined){
-        failFunc(data)
-      } else {
         alert("リクエスト時になんらかのエラーが発生しました：");
-      }
 		 });
 }
 
@@ -103,41 +83,25 @@ function getAll(){
 
 		//取得処理
 		getIssuesList()
-		getCloseIssuesList()
 }
 
 
 /**
-* ある日付までに作成したissueの総数
+* issueの統計情報を取得
 */
 function getIssuesList(){
 
 	for(var i in dateList){
 		var startDate = dateList[i]
 		var successFunc = function(data, date){
-			list[date] = getXtotal(data);
+			list[date] = data.statistics.counts.all;
+			closeList[date] = data.statistics.counts.closed;
 			flagCheck()
 		}
-		var url = "/groups/" + GROUP_ID + "/issues";
-		var request = "private_token=" + TOKEN + "&created_before=" + startDate + "T23:59:59Z&per_page=1" + labelSearchStr;
-		sendAjaxRequestHeader(url, request, successFunc, startDate)
-	}
-}
-
-/**
-* ある日付までに完了したissueの総数
-*/
-function getCloseIssuesList(){
-
-	for(var i in dateList){
-		var startDate = dateList[i]
-		var successFunc = function(data, date){
-			closeList[date] = getXtotal(data);
-			flagCheck()
-		}
-		var url = "/groups/" + GROUP_ID + "/issues";
-		var request = "private_token=" + TOKEN + "&updated_before=" + startDate + "T23:59:59Z&state=closed&per_page=1" + labelSearchStr;
-		sendAjaxRequestHeader(url, request, successFunc, startDate)
+		var method = "GET";
+		var url = "/groups/" + GROUP_ID + "/issues_statistics";
+		var request = "private_token=" + TOKEN + "&created_before=" + startDate + "T23:59:59Z" + labelSearchStr;
+		sendAjaxRequest(method, url, request, successFunc, startDate)
 	}
 }
 
@@ -145,7 +109,7 @@ function getCloseIssuesList(){
 //完了確認処理
 function flagCheck(){
 	flagCount++
-	if(flagCount == (dateRange+1)*2){
+	if(flagCount == dateRange+1){
 		console.log(list)
 		console.log(closeList)
 		toggleChart()
@@ -234,7 +198,7 @@ function chartCreate(){
 
 	//グラフ作成処理（バーンアップ）
 	var ctx = document.getElementById("burnUpChart");
-	var burnUpChart = new Chart(ctx, {
+	burnUpChart = new Chart(ctx, {
 		type: 'line',
 		data: {
 			labels: labels,
@@ -260,7 +224,7 @@ function chartCreate(){
 
 	//グラフ作成処理（バーンダウン）
 	var ctx2 = document.getElementById("burnDownChart");
-	var burnDownChart = new Chart(ctx2, {
+	burnDownChart = new Chart(ctx2, {
 		type: 'line',
 		data: {
 			labels: labels,
@@ -351,7 +315,7 @@ function chartCreate2(){
 
 	//グラフ作成処理（バーンアップ）
 	var ctx = document.getElementById("burnUpChart");
-	var burnUpChart = new Chart(ctx, {
+	burnUpChart = new Chart(ctx, {
 		type: 'line',
 		data: {
 			labels: labels,
@@ -384,7 +348,7 @@ function chartCreate2(){
 
 	//グラフ作成処理（バーンダウン）
 	var ctx2 = document.getElementById("burnDownChart");
-	var burnDownChart = new Chart(ctx2, {
+	burnDownChart = new Chart(ctx2, {
 		type: 'line',
 		data: {
 			labels: labels,
@@ -413,6 +377,16 @@ function toggleChart(){
 	if(dateList.length == 0){
 			return
 	}
+
+  //グラフを初期化
+  if (burnDownChart) {
+    burnDownChart.destroy();
+  }
+  if (burnUpChart) {
+    burnUpChart.destroy();
+  }
+
+  //グラフを描画
 	if(document.getElementById("estimateFlg").checked){
 		chartCreate2()
 	} else {
@@ -464,25 +438,6 @@ function writeMilestoneList(data){
 /***********************************************************
 * 共通処理
 *************************************************************/
-
-/**
-* x-total を取得する
-*/
-function getXtotal(data){
-	return sliceStr(data, "x-total: ")
-}
-
-/**
-* 指定されたkeyをもとに値を取得する
-* 例）key: "x-total: "
-*/
-function sliceStr(str, key){
-	var startPosition = str.indexOf(key);
-	var endPosition = str.indexOf("\n", startPosition);
-	var strLength = key.length
-	return parseInt(str.slice(startPosition + strLength, endPosition))
-}
-
 /*
 * 配列の差分平均を計算
 */

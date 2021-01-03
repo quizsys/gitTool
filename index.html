@@ -6,6 +6,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
   <script src="config.js"></script>
   <script src="main.js"></script>
 </head>
@@ -39,7 +40,8 @@
 
   <h4>ラベル別集計</h4>
     <input id="label-name" placeholder="ラベル名でフィルター" onchange="changeLabelName()"></input>
-	<table class="table table-striped">
+    <input type="checkbox" id="graph-display-flg" onchange="changeLabelName()" />グラフ表示
+	<table id="label-table" class="table table-striped">
 		<thead>
 		  <tr>
 		  	<th>ラベル名</th>
@@ -52,8 +54,9 @@
 		<tbody id="result-by-tags">
 		</tbody>
 	</table>
+  <canvas id="label-chart" style="height: 50px"></canvas>
 
-  <br>
+  <!-- <br> -->
   <h4>一覧をcsvダウンロード</h4>
   <a id="download" class="btn btn-info" href="#" download="test.csv" onclick="csvDownload()">ダウンロード</a>
 
@@ -97,7 +100,7 @@
       <tr>
         <td class="table-secondary">④ISSUEの名前を入力</td>
         <td>
-          <input type="text" id="issue-mnp" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
+          <input type="text" id="issue-name" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
         </td>
       </tr>
     </tbody>
