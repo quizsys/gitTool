@@ -7,38 +7,40 @@ var issuePage = 1              // issueのページ番号（100件以上にな�
 var mergeRequestPage = 1       // MRのページ番号（100件以上になると1増やす）
 var projectList = {}
 var labelChart
+var milestoneList
+var selectMilestone
 
-/**
-* Ajax通信用のメソッド
-* @param method : GET, POST
-* @param url : リクエスト先のURL
-* @param request : requestのjson
-* @param successFunc : リクエスト成功時に起動するfunction
-* @returns
-*/
-function sendAjaxRequest(method, url, request, successFunc, failFunc){
-
-    //ajaxでservletにリクエストを送信
-    $.ajax({
-       type    : method,   //GET / POST
-       url     : GIT_URL + url,      //送信先のServlet URL（適当に変えて下さい）
-       data    : request,  //リクエストJSON
-       async   : true      //true:非同期(デフォルト), false:同期
-    })
-    // 通信成功時
-    .done( function(data) {
-      console.log(url);
-      successFunc(data)
-    })
-    // 通信失敗時
-		 .fail( function(data) {
-      if(failFunc != undefined){
-        failFunc(data)
-      } else {
-        alert("リクエスト時になんらかのエラーが発生しました：");
-      }
-		 });
-}
+// /**
+// * Ajax通信用のメソッド
+// * @param method : GET, POST
+// * @param url : リクエスト先のURL
+// * @param request : requestのjson
+// * @param successFunc : リクエスト成功時に起動するfunction
+// * @returns
+// */
+// function sendAjaxRequest(method, url, request, successFunc, failFunc){
+//
+//     //ajaxでservletにリクエストを送信
+//     $.ajax({
+//        type    : method,   //GET / POST
+//        url     : GIT_URL + url,      //送信先のServlet URL（適当に変えて下さい）
+//        data    : request,  //リクエストJSON
+//        async   : true      //true:非同期(デフォルト), false:同期
+//     })
+//     // 通信成功時
+//     .done( function(data) {
+//       console.log(url);
+//       successFunc(data)
+//     })
+//     // 通信失敗時
+// 		 .fail( function(data) {
+//       if(failFunc != undefined){
+//         failFunc(data)
+//       } else {
+//         alert("リクエスト時になんらかのエラーが発生しました：");
+//       }
+// 		 });
+// }
 
 
 /***********************************************************
@@ -50,12 +52,16 @@ function sendAjaxRequest(method, url, request, successFunc, failFunc){
 **/
 function getInfo(){
 
+    // ボタンを非活性にする
+    document.getElementById("get-info-btn").disabled = true;
+
     //初期化
     compFlg = false
     issueList = []
     mrList = []
     issuePage = 1
     mergeRequestPage = 1
+    selectMilestone = document.getElementById("milestone").value;
 
     //実行
     getIssues()
@@ -68,7 +74,7 @@ function getInfo(){
 */
 function getIssues(){
 
-  var milestone = document.getElementById("milestone").value;
+  var milestone = selectMilestone;
   var method = "GET";
   var successFunc = issuesResult;
   var url = "/groups/" + GROUP_ID + "/issues";
@@ -104,7 +110,7 @@ function issuesResult(data){
 */
 function getMergeRequests(){
 
-  var milestone = document.getElementById("milestone").value;
+  var milestone = selectMilestone;
   var method = "GET";
   var successFunc = mergeRequestsResult;
   var url = "/groups/" + GROUP_ID + "/merge_requests";
@@ -149,9 +155,13 @@ function writeResult(){
   var mergeRequestSmmary = mergeRequestSmmaries.array;
   var issueLabelSmmary = issueSmmaries.labelArray;
   var mergeRequestLabelSmmary = mergeRequestSmmaries.labelArray;
+  var allLabel = issueSmmaries.allLabel;
+  var allLabelMR = mergeRequestSmmaries.allLabel;
 
   var array = {};
   var labelArray = {};
+
+
 
   //MRの情報をissueの情報と結合する
   //全issueを集計
@@ -175,11 +185,17 @@ function writeResult(){
     }
   }
 
+  allLabel.merge_request_total_time_spent = allLabelMR.total_time_spent
+  labelArray["すべて"] = allLabel;
+
   //console.log(array)
-  // console.log(labelArray)
+  //console.log(labelArray)
 
   //グローバル変数に格納
   labelIssueList = labelArray;
+
+  // labelの一覧選択を更新
+  updateLabelSelect();
 
   //出力
   document.getElementById("result").innerHTML = updateIssueTable(array)
@@ -190,6 +206,10 @@ function writeResult(){
 
   //更新時刻を更新
   document.getElementById("update-date-time").innerHTML = "更新日時： " + getNow();
+
+  // ボタンを活性にする
+  document.getElementById("get-info-btn").disabled = false;
+
 }
 
 
@@ -200,9 +220,26 @@ function summaryTime(data){
   var array = {};
   var ret = {};
 
+
+  // var today = new Date()
+  // var todayDate = tmpDate.getFullYear() + "-" + ("00" + (tmpDate.getMonth() + 1)).slice(-2) + "-" + ("00" + tmpDate.getDate()).slice(-2)
+  var allLabel = {
+    issue_count: 0,
+    comp_issue_count: 0,
+    name: "すべて",
+    time_estimate: 0,
+    total_time_spent: 0,
+  }
+
   for(var i in data){
 
     var id = 0
+
+    //完了フラグ
+    var compFlg = false;
+    if(data[i].state == "closed" || data[i].labels.indexOf("Done")  > -1){
+      compFlg = true;
+    }
 
     if(data[i].assignee){
       id = data[i].assignee.id
@@ -212,28 +249,32 @@ function summaryTime(data){
       data[i].assignee.name = "未割当"
     }
 
-    if(array[id]){
 
-      //console.log("ある場合")
-      array[id].issue_count++;
-      array[id].time_estimate += data[i].time_stats.time_estimate
-      array[id].total_time_spent += data[i].time_stats.total_time_spent
-
-    } else {
-
-      //console.log("ない場合")
+    // idがない場合
+    if(!array[id]){
       array[id] = {}
       array[id].name = data[i].assignee.name
-      array[id].issue_count = 1;
-      array[id].time_estimate = data[i].time_stats.time_estimate
-      array[id].total_time_spent = data[i].time_stats.total_time_spent
-
+      array[id].issue_count = 0
+      array[id].time_estimate = 0
+      array[id].total_time_spent = 0
     }
+
+    array[id].issue_count++;
+    array[id].time_estimate += data[i].time_stats.time_estimate
+    array[id].total_time_spent += data[i].time_stats.total_time_spent
+    if(compFlg){
+      array[id].comp_issue_count ++
+    }
+
 
     //タグ別一覧の配列を作成
     var labels = data[i].labels
 
     for(var j in labels){
+
+      if(labels[j] == "Done"){
+        compFlg = true
+      }
 
       // 特定のラベルは飛ばす
       if(labels[j] == "To Do" || labels[j] == "Doing" || labels[j] == "Done" ){
@@ -243,16 +284,30 @@ function summaryTime(data){
       if(!labelArray[labels[j]]) {
         labelArray[labels[j]] = {}
         labelArray[labels[j]].issue_count = 0
+        labelArray[labels[j]].comp_issue_count = 0
         labelArray[labels[j]].time_estimate = 0
         labelArray[labels[j]].total_time_spent = 0
       }
       labelArray[labels[j]].issue_count ++
       labelArray[labels[j]].time_estimate += data[i].time_stats.time_estimate
       labelArray[labels[j]].total_time_spent += data[i].time_stats.total_time_spent
+      if(compFlg){
+        labelArray[labels[j]].comp_issue_count ++
+      }
     }
+
+    //allLabelの集計
+    allLabel.issue_count ++
+    allLabel.time_estimate += data[i].time_stats.time_estimate
+    allLabel.total_time_spent += data[i].time_stats.total_time_spent
+    if(compFlg){
+      allLabel.comp_issue_count ++
+    }
+
   }
   ret.array = array
   ret.labelArray = labelArray
+  ret.allLabel = allLabel
   return ret
 }
 
@@ -384,6 +439,8 @@ function writeMilestoneList(data){
 		html += "<option value='" + i +"'>" + array[i].title + "</option>";
 	}
 	document.getElementById("select-milestone").innerHTML = html;
+
+  milestoneList = data;
 }
 
 /**
@@ -831,42 +888,55 @@ function createGraph(array){
 }
 
 
+/**
+* labelのセレクトボックスを更新する
+*/
+function updateLabelSelect(){
+
+  var html = ""
+  for(var i in labelIssueList){
+    html += "<option value='" + i  + "'>" + i + "</option>";
+  }
+  document.getElementById("select-label").innerHTML = html
+}
+
+
 /***********************************************************
 * 共通処理
 *************************************************************/
-
-/**
-* 標準出力する
-*/
-function sysout(data){
-  console.log(data)
-}
-
-/**
-* 現在時刻をMM/dd hh:mm:ssで表示する
-*/
-function getNow(){
-
-  var now = new Date();
-  var month = now.getMonth() + 1
-  var date = now.getDate()
-  var hours = now.getHours()
-  var minutes = now.getMinutes()
-  var seconds = now.getSeconds()
-
-  var str = month + "/" + date + " " + hours + ":" + minutes + ":" + seconds
-  return  str;
-}
-
-
-/**
-* 四捨五入する関数
-* @number: 元の数字
-* @n: 小数点第n位まで残す
-*/
-function round(number, n){
-  return Math.floor( number * Math.pow( 10, n ) ) / Math.pow( 10, n ) ;
-}
+//
+// /**
+// * 標準出力する
+// */
+// function sysout(data){
+//   console.log(data)
+// }
+//
+// /**
+// * 現在時刻をMM/dd hh:mm:ssで表示する
+// */
+// function getNow(){
+//
+//   var now = new Date();
+//   var month = now.getMonth() + 1
+//   var date = now.getDate()
+//   var hours = now.getHours()
+//   var minutes = now.getMinutes()
+//   var seconds = now.getSeconds()
+//
+//   var str = month + "/" + date + " " + hours + ":" + minutes + ":" + seconds
+//   return  str;
+// }
+//
+//
+// /**
+// * 四捨五入する関数
+// * @number: 元の数字
+// * @n: 小数点第n位まで残す
+// */
+// function round(number, n){
+//   return Math.floor( number * Math.pow( 10, n ) ) / Math.pow( 10, n ) ;
+// }
 
 
 

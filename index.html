@@ -8,14 +8,16 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
   <script src="config.js"></script>
+  <script src="common.js"></script>
   <script src="main.js"></script>
+  <script src="main-chart.js"></script>
 </head>
 <body>
 
 
   <h1>ISSUEを集計</h1>
   <select id="milestone"></select>
-  <button class="btn btn-primary" onclick="getInfo()">送信</button>
+  <button class="btn btn-primary" id="get-info-btn" onclick="getInfo()">送信</button>
   <div id="update-date-time"></div>
 
   <br>
@@ -112,8 +114,16 @@
   <br>
   <hr>
   <h1>チャートを表示</h1>
+
+  <h4>バーンダウンチャートを表示</h4>
+
+  <select id="select-label"></select>
+  <button class="btn btn-primary" onclick="getInfoBurnDownChart()">表示</button><br />
+  <canvas id="burnDownChart"></canvas>
+
+
+
   <ul>
-    <li><a href="chart/index.html" target="_blank">バーンダウン/バーンアップチャートを表示</a></li>
     <li><a href="diagram/" target="_blank">累積フローダイアグラムを表示</a></li>
   </ul>
 
