@@ -489,9 +489,14 @@ function getTemplate(){
     return
   }
 
-
   var project_id = document.getElementById("select-project").value
   var template_file = document.getElementById("select-template").value
+
+  //グローバルテンプレートの使用判定
+  var globalTemplateFlg = document.getElementById("global-template-flg").checked
+  if(globalTemplateFlg){
+    project_id = GROBAL_TEMPLATE_PROJECT_ID
+  }
 
 	//テンプレートファイルのリポジトリトップからのパス
 	var templatePath = ".gitlab/issue_templates/" + template_file
@@ -628,6 +633,12 @@ function writecreateIssueResultContinue(data){
 function getTemplateList(){
 
   var project_id = document.getElementById("select-project").value;
+
+  //グローバルテンプレートの使用判定
+  var globalTemplateFlg = document.getElementById("global-template-flg").checked
+  if(globalTemplateFlg){
+    project_id = GROBAL_TEMPLATE_PROJECT_ID
+  }
 
 	//テンプレートファイルのリポジトリトップからのパス
 	var templatePath = ".gitlab/issue_templates/"
@@ -899,44 +910,6 @@ function updateLabelSelect(){
   }
   document.getElementById("select-label").innerHTML = html
 }
-
-
-/***********************************************************
-* 共通処理
-*************************************************************/
-//
-// /**
-// * 標準出力する
-// */
-// function sysout(data){
-//   console.log(data)
-// }
-//
-// /**
-// * 現在時刻をMM/dd hh:mm:ssで表示する
-// */
-// function getNow(){
-//
-//   var now = new Date();
-//   var month = now.getMonth() + 1
-//   var date = now.getDate()
-//   var hours = now.getHours()
-//   var minutes = now.getMinutes()
-//   var seconds = now.getSeconds()
-//
-//   var str = month + "/" + date + " " + hours + ":" + minutes + ":" + seconds
-//   return  str;
-// }
-//
-//
-// /**
-// * 四捨五入する関数
-// * @number: 元の数字
-// * @n: 小数点第n位まで残す
-// */
-// function round(number, n){
-//   return Math.floor( number * Math.pow( 10, n ) ) / Math.pow( 10, n ) ;
-// }
 
 
 
