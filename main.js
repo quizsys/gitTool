@@ -559,6 +559,15 @@ function writeCreateIssueResult(data){
 *************************************************************/
 
 
+//前回のissueの番号
+var continueIssueId = 0
+//新しい継続issueの番号
+var newContinueIssueId = 0
+//継続issueのプロジェクトID
+var continueIssueProjectId = 0
+// 残りのループ回数
+var restLoopCount = 0
+
 /**
 * 継続ISSUEの情報を取得する
 */
@@ -570,6 +579,10 @@ function getIssueContinue(){
     alert("マイルストーンが選択されていません\n「ISSUEを集計」の送信ボタンを押してください")
     return false;
   }
+
+
+  // ボタンを非活性にする
+  document.getElementById("get-issue-continue-btn").disabled = true;
 
   var arr = issue.split(':')
   var project_id = arr[0]
@@ -584,7 +597,6 @@ function getIssueContinue(){
 
 }
 
-
 /**
 * 継続ISSUEを作成する
 */
@@ -597,6 +609,10 @@ function createIssueContinue(data){
   var project_id = data.project_id
   var issue_iid = data.iid
   var title = data.title;
+
+  //元issueの番号を保存
+  continueIssueId = issue_iid
+  continueIssueProjectId = project_id
 
   //すでに継続issueだった場合、継続の文字を取り除く
   var index = title.indexOf(" 継続#");
@@ -625,7 +641,73 @@ function writecreateIssueResultContinue(data){
   var html = "<a href='" + web_url + "' target='_blank'>#" + id + " : " + title + "</a> を作成しました"
   document.getElementById("createIssueResultContinue").innerHTML = html;
 
+  //リンクの設定
+  newContinueIssueId = id
+  getIssueLinks()
 }
+
+
+/**
+* リンクの取得
+*/
+function getIssueLinks(){
+
+    var method = "GET";
+    var successFunc = createIssueLinks;
+    var url = "/projects/" + continueIssueProjectId + "/issues/" + continueIssueId + "/links";
+    var request = "private_token=" + TOKEN;
+    sendAjaxRequest(method, url, request, successFunc)
+}
+
+
+/**
+* リンクの設定
+*/
+function createIssueLinks(data){
+
+    //ループ用にデータを格納する
+    var ids = [];
+    ids.push(continueIssueId)
+    for(var i in data){
+      var id = data[i].iid;
+      ids.push(id)
+    }
+
+    //ループ回数を定義（非同期処理のカウンター）
+    restLoopCount = ids.length
+
+    var method = "POST";
+    var successFunc = createIssueLinksResult;
+    var url = "/projects/" + continueIssueProjectId + "/issues/" + newContinueIssueId + "/links";
+
+    //処理を実施
+    for(var i = 0; i< ids.length ;i++){
+      var request = "private_token=" + TOKEN + "&target_project_id=" + continueIssueProjectId + "&target_issue_iid=" + ids[i] ;
+      sendAjaxRequest(method, url, request, successFunc)
+    }
+}
+
+/**
+* リンク作成の結果を取得、すべてのリンクを作成したら、ボタンを元に戻す
+*/
+function createIssueLinksResult(data){
+    restLoopCount--
+    console.log("リンク作成中 残りループ：" + restLoopCount)
+    if(restLoopCount == 0){
+      //変数初期化
+      continueIssueId = 0
+      newContinueIssueId = 0
+      continueIssueProjectId = 0
+      // ボタンを非活性を解除する
+      document.getElementById("get-issue-continue-btn").disabled = false;
+    }
+};
+
+
+/***********************************************************
+* テンプレートの表示切替処理
+*************************************************************/
+
 
 /**
 * テンプレート一覧を取得する
