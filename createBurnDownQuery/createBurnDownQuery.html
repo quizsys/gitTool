@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gitlab tools</title>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
+  <script src="../config.js"></script>
+  <script src="../common.js"></script>
+  <script src="main.js"></script>
+</head>
+<body>
+
+	<h1>クエリ作成</h1>
+  <select id="milestone"></select>
+  <button class="btn btn-primary" id="get-info-btn" onclick="dateListSet()">①送信</button>
+  <button class="btn btn-warning" onclick="calc()">②計算</button>
+  <br />
+
+  <textarea id="result-space" style="width:90%;height: 400px;"></textarea>
+
+</body>
+
+<script>
+  window.onload = function() {
+
+    // ①情報を取得する
+    getMilestoneList()
+    // dateListSet()
+    // getIssueDeatil()
+
+    // ②情報取得が終わった後、計算する
+    // calc()
+
+    // ③SQLで出力する
+    // createSummaryQuery()
+
+  }
+</script>
+
+</html>

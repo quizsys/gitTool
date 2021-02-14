@@ -1,34 +1,5 @@
 //グローバル変数の宣言
 var burnDownChart
-//
-// /**
-// * APIへのAjax通信用のメソッド
-// * @param method : GET, POST
-// * @param url : リクエスト先のURL
-// * @param request : requestのjson
-// * @param successFunc : リクエスト成功時に起動するfunction
-// * @returns
-// */
-// function sendAjaxRequestToApi(method, url, request, successFunc){
-//
-//     //ajaxでservletにリクエストを送信
-//     $.ajax({
-//        type    : method,   //GET / POST
-//        url     : API_URL + url,      //送信先のServlet URL（適当に変えて下さい）
-//        data    : request,  //リクエストJSON
-//        async   : true      //true:非同期(デフォルト), false:同期
-//     })
-//     // 通信成功時
-//     .done( function(data) {
-//       console.log(url);
-//       successFunc(data)
-//     })
-//     // 通信失敗時
-// 		 .fail( function(data) {
-//         alert("リクエスト時になんらかのエラーが発生しました：");
-// 		 });
-// }
-
 
 /**
 * 処理開始
@@ -57,13 +28,16 @@ function getInfoBurnDownChart(){
 */
 function getBurnDownInfo(){
 
-    var milestone = selectMilestone;
+    var milestoneStr = selectMilestone;
+		var milestone =  searchElementSrtFromArray(milestoneList, "title", milestoneStr)
     var label = document.getElementById("select-label").value;
+		var startDate = milestone.start_date;
+		var endDate   = milestone.due_date;
 
     var successFunc = dataCreae
 		var method = "GET";
 		var url = "/burndown";
-		var request = "milestone=" + encodeURIComponent(milestone) + "&label=" + encodeURIComponent(label)
+		var request = "milestone=" + encodeURIComponent(milestoneStr) + "&label=" + encodeURIComponent(label) + "&startDate=" + encodeURIComponent(startDate) + "&endDate=" + encodeURIComponent(endDate);
 		sendAjaxRequestToApi(method, url, request, successFunc)
 
 }
@@ -72,7 +46,11 @@ function getBurnDownInfo(){
 /**
 * グラフ表示用のデータを作成する
 */
-function dataCreae(data){
+function dataCreae(burndownReturn){
+
+	// 取得情報を格納
+	var data = burndownReturn.burnDownList
+	var holidayList = burndownReturn.holidayList
 
   var todayDate = dateToStr(new Date());
   var label = document.getElementById("select-label").value;
@@ -90,9 +68,11 @@ function dataCreae(data){
   for(var i = 0; i< dateRange; i++){
 
     var str = dateToStr(tmpDate)
-    dateList.push(str)
-    tmpDate.setDate(tmpDate.getDate() + 1)
 
+		if(tmpDate.getDay() != 0 && tmpDate.getDay() != 6 && holidayList.indexOf(str) == -1){
+			dateList.push(str)
+		}
+    tmpDate.setDate(tmpDate.getDate() + 1)
   }
 
 
@@ -106,7 +86,8 @@ function dataCreae(data){
     date: todayDate,
     label: d.name,
     timeEstimate: d.time_estimate,
-    totalTimeSpent: d.total_time_spent,
+		compTimeEstimate: d.comp_time_estimate,
+    // totalTimeSpent: d.total_time_spent,
     totalTimeSpentMergeRequest:0
   }
   data.push(todayData)
@@ -114,16 +95,19 @@ function dataCreae(data){
 
   //グラフ用のデータを準備
   var labels = []
-  var compData = []
+  var issueCount = []
   var allData = []
   var compEstimate = []
+	var compIssueCount = []
 
   var initEstimateTime = 0
+	var initIssueCount = 0
   var startDateData = searchElementSrtFromArray(data, "date", startDateStr);
 
   // 初回日にデータがある場合（初回日より後にラベルを追加した場合はデータがない）
   if(startDateData != null){
     initEstimateTime = searchElementSrtFromArray(data, "date", startDateStr).timeEstimate
+		initIssueCount   = searchElementSrtFromArray(data, "date", startDateStr).allIssueCount
   } else {
     console.log("★★★初日にデータがありません。後日ラベルが追加された可能性があります。★★★")
   }
@@ -132,14 +116,16 @@ function dataCreae(data){
   if(initEstimateTime != 0){
     //初期データを投入
     labels.push("見積当初")
-    compData.push(0)
-    allData.push(initEstimateTime)
-    compEstimate.push(initEstimateTime)
+    issueCount.push(initIssueCount)
+    allData.push(round(initEstimateTime /3600, 2))
+    compEstimate.push(round(initEstimateTime /3600, 2))
+		compIssueCount.push(0)
   }
 
   // 理想線のデータ作成
   var estimateTime = initEstimateTime
-  var slope = estimateTime / dateList.length
+	var bussinessCount = dateList.length
+  var slope = estimateTime / bussinessCount
 
   // 日付ごとにデータをマッピングしていく
   for(var i in dateList){
@@ -150,24 +136,26 @@ function dataCreae(data){
     labels.push(dateList[i])
 
     if(d != null){
-      compData.push(100 - round(100 * ((d.allIssueCount - d.compIssueCount) / d.allIssueCount), 0) )
-      allData.push(d.timeEstimate - d.totalTimeSpent)
+			allData.push(ceil((d.timeEstimate - d.compTimeEstimate) / 3600, 2))
+      issueCount.push(d.allIssueCount - d.compIssueCount)
+			compIssueCount.push(d.compIssueCount)
     }
 
+		//理想線のデータを追加
     if(initEstimateTime != 0){
-      //理想線のデータを追加
-      estimateTime -= slope
-      compEstimate.push(round(estimateTime, 0))
+			estimateTime -= slope
+      compEstimate.push(ceil(estimateTime/3600, 2));
     }
   }
 
   console.log(labels)
-  console.log(compData)
+  console.log(issueCount)
   console.log(allData)
   console.log(compEstimate)
+  console.log(compIssueCount)
 
   // グラフを描画
-  chartCreateBurnDown(labels, compData, allData, compEstimate)
+  chartCreateBurnDown(labels, issueCount, allData, compEstimate, compIssueCount)
 
 }
 
@@ -175,7 +163,11 @@ function dataCreae(data){
 /*
 * バーンダウンチャートを作成
 */
-function chartCreateBurnDown(labels, compData, allData, compEstimate){
+function chartCreateBurnDown(labels, issueCount, allData, compEstimate, compIssueCount){
+
+	//グラフの最大値を設定
+	// optionBurnDown.scales.yAxes[0].ticks.max = calcRoundMax(allData)
+
 
 	//グラフ作成処理
 	var ctx = document.getElementById("burnDownChart");
@@ -191,6 +183,8 @@ function chartCreateBurnDown(labels, compData, allData, compEstimate){
 					backgroundColor: "rgba(0,0,0,0)",
 					lineTension:0, //ベジェ曲線の張り具合。 0（ゼロ）を指定すると直線になる,
           yAxisID: "y-axis-1", // 追加
+					pointBorderWidth: 10,
+					borderWidth:5,
           type: 'line' // 追加
 				},
 				{
@@ -200,14 +194,27 @@ function chartCreateBurnDown(labels, compData, allData, compEstimate){
 					backgroundColor: "rgba(0,0,0,0)",
 					lineTension:0, //ベジェ曲線の張り具合。 0（ゼロ）を指定すると直線になる
           yAxisID: "y-axis-1", // 追加
+					pointBorderWidth: 10,
+					borderWidth:5,
           type: 'line' // 追加
 
 				},
 				{
-					label: 'ISSUE完了率',
-					data: compData,
-          backgroundColor: "rgba(255,150,100,0.5)",
-          borderColor:"rgba(255,0,0,0.8)",
+					label: '完了ISSUE',
+					data: compIssueCount,
+          // backgroundColor: "rgba(255,150,100,0.6)",
+          // borderColor:"rgba(255,0,0,0.8)",
+					backgroundColor: "rgba(0,100,0,0.5)",
+					stack: 'Stack 0',
+          yAxisID: "y-axis-2" // 追加
+				},
+				{
+					label: '未完了ISSUE',
+					data: issueCount,
+          // backgroundColor: "rgba(255,150,100,0.1)",
+          // borderColor:"rgba(255,0,0,0.2)",
+					backgroundColor: "rgba(0,100,0,0.15)",
+					stack: 'Stack 0',
           yAxisID: "y-axis-2" // 追加
 				}
 			],
@@ -232,6 +239,9 @@ var optionBurnDown = {
 									display: true,                // 表示設定
 									labelString: '日付',    // ラベル
 									fontSize: FONT_SIZE                   // フォントサイズ
+							},
+							ticks: {
+								fontSize: FONT_SIZE                   // フォントサイズ
 							}
 					}
 			],
@@ -245,22 +255,32 @@ var optionBurnDown = {
 								fontSize: FONT_SIZE                   // フォントサイズ
 						},
             ticks: {
-              min: 0,             // 0から始める
+              // min: 0,             // 0から始める
+							// max: 13,           // 最大値
+							autoSkip: true,                // 幅を小さくした場合に自動で表示数を減らす
+							maxTicksLimit:10,
+							fontSize: FONT_SIZE                   // フォントサイズ
+
+
             }
           },
           {
             id: "y-axis-2",   // Y軸のID
             position: "right", // どちら側に表示される軸か？
+						stacked: true,
 						scaleLabel: {                  // 軸ラベル
 								display: true,                 // 表示の有無
-								labelString: 'ISSUE完了率（%）',     // ラベル
+								labelString: 'ISSUE件数',     // ラベル
 								fontSize: FONT_SIZE                   // フォントサイズ
 						},
             ticks: {
                 // fontColor: "black",
                 min: 0,             // 0から始める
-                max: 100,                      // 最大値100
+                // max: 100,                      // 最大値100
                 autoSkip: true,                // 幅を小さくした場合に自動で表示数を減らす
+								maxTicksLimit:10,
+								fontSize: FONT_SIZE                   // フォントサイズ
+
 
               }
 					}
@@ -268,59 +288,62 @@ var optionBurnDown = {
 	}
 }
 
-// 
-// /***********************************************************
-// * 共通処理
-// *************************************************************/
-//
-// /**
-// * オブジェクトの配列から、キーが指定した値をオブジェクトを返却する
-// */
-// function searchElementSrtFromArray(array, key, searchStr){
-//
-//   var ret = null;
-//   for(var i in array){
-//       if(array[i][key] == searchStr){
-//         ret = array[i];
-//         break;
-//       }
-//   }
-//   return ret;
-// }
-//
-//
-// /**
-// * 日付の差分を計算
-// * 例) 2020-01-01 と 2020-01-05 の差分 => 4
-// */
-// function dateDiff(dateStr1, dateStr2){
-//
-// 	var dateStr1Arr = dateStr1.split("-")
-// 	var dateStr2Arr = dateStr2.split("-")
-//
-// 	var d1 = new Date(dateStr1Arr[0], dateStr1Arr[1]-1,dateStr1Arr[2])
-// 	var d2 = new Date(dateStr2Arr[0], dateStr2Arr[1]-1,dateStr2Arr[2])
-// 	return ((d2 - d1) / 86400000);
-//
-// }
-//
-//
-// /**
-// * 日付文字列をDate型で返す
-// */
-// function strToDate(dateStr){
-//   var dateStrArr = dateStr.split("-")
-//   return new Date(dateStrArr[0], dateStrArr[1]-1,dateStrArr[2])
-//
-// }
-//
-//
-// /**
-// * Date型オブジェクトを日付文字列（yyyy-MM-dd）で返す
-// */
-// function dateToStr(date){
-//   return date.getFullYear() + "-" + ("00" + (date.getMonth() + 1)).slice(-2) + "-" + ("00" + date.getDate()).slice(-2)
-// }
+/**
+* 配列の中の最大値 + 10の値を適切な桁数にして返す
+*/
+/*
+function calcRoundMax(arr){
 
+	//配列0の場合計算できないので、0を返す
+	if(arr.length == 0){
+		return 0
+	}
+
+	var max = Math.max(...arr)
+
+	// 最大値が0の場合計算できないので、0を返す
+	if(max == 0){
+		return 0
+	}
+
+	//10%追加する
+	var nextMax = max * 1.1
+
+	var ret = nextMax
+
+	if(nextMax > 1000){
+		// 100 の倍数に丸め込む
+		// 例：　1230 → 1200
+		ret = Math.round((nextMax /100), 2) * 100
+
+	} else if(nextMax > 500){
+		// 50 の倍数に丸め込む
+		// 例：　224 → 200
+		ret = Math.round((nextMax /50), 1) * 50
+
+	} else if(nextMax > 200){
+		// 20 の倍数に丸め込む
+		// 例：　123 → 120
+		ret = Math.round((nextMax /20), 1) * 20
+
+	} else if(nextMax > 100){
+		// 10 の倍数に丸め込む
+		// 例：　123 → 120
+		ret = Math.round(( nextMax/10), 1) * 10
+
+		} else if(nextMax > 50){
+			// 5 の倍数に丸め込む
+			// 例：　72 → 70
+			ret = Math.round((nextMax /5), 1) * 5
+
+		} else if(nextMax > 20){
+			// 2 の倍数に丸め込む
+			// 例：　21 → 20
+			ret = Math.round((nextMax /2), 1) * 2
+		}
+		return ret;
+
+}
+*/
 
 console.log("read completed main-chart")

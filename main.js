@@ -229,6 +229,7 @@ function summaryTime(data){
     name: "すべて",
     time_estimate: 0,
     total_time_spent: 0,
+    comp_time_estimate: 0
   }
 
   for(var i in data){
@@ -257,6 +258,8 @@ function summaryTime(data){
       array[id].issue_count = 0
       array[id].time_estimate = 0
       array[id].total_time_spent = 0
+      array[id].comp_issue_count = 0
+      array[id].comp_time_estimate = 0
     }
 
     array[id].issue_count++;
@@ -264,6 +267,7 @@ function summaryTime(data){
     array[id].total_time_spent += data[i].time_stats.total_time_spent
     if(compFlg){
       array[id].comp_issue_count ++
+      array[id].comp_time_estimate += data[i].time_stats.time_estimate
     }
 
 
@@ -287,12 +291,14 @@ function summaryTime(data){
         labelArray[labels[j]].comp_issue_count = 0
         labelArray[labels[j]].time_estimate = 0
         labelArray[labels[j]].total_time_spent = 0
+        labelArray[labels[j]].comp_time_estimate = 0
       }
       labelArray[labels[j]].issue_count ++
       labelArray[labels[j]].time_estimate += data[i].time_stats.time_estimate
       labelArray[labels[j]].total_time_spent += data[i].time_stats.total_time_spent
       if(compFlg){
         labelArray[labels[j]].comp_issue_count ++
+        labelArray[labels[j]].comp_time_estimate += data[i].time_stats.time_estimate
       }
     }
 
@@ -302,6 +308,7 @@ function summaryTime(data){
     allLabel.total_time_spent += data[i].time_stats.total_time_spent
     if(compFlg){
       allLabel.comp_issue_count ++
+      allLabel.comp_time_estimate += data[i].time_stats.time_estimate
     }
 
   }
@@ -993,7 +1000,12 @@ function updateLabelSelect(){
   document.getElementById("select-label").innerHTML = html
 }
 
-
+/**
+* apiのリンクURLを設定
+*/
+function setApiLink(){
+  document.getElementById("plan").href= API_URL + "/plan"
+}
 
 
 console.log("read completed")

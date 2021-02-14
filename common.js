@@ -96,6 +96,15 @@ function round(number, n){
   return Math.floor( number * Math.pow( 10, n ) ) / Math.pow( 10, n ) ;
 }
 
+/**
+* 四捨五入（繰り上げ）する関数
+* @number: 元の数字
+* @n: 小数点第n位まで残す
+*/
+function ceil(number, n){
+  return Math.ceil( number * Math.pow( 10, n ) ) / Math.pow( 10, n ) ;
+}
+
 
 
 /**
