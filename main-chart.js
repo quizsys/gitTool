@@ -30,7 +30,7 @@ function getBurnDownInfo(){
 
     var milestoneStr = selectMilestone;
 		var milestone =  searchElementSrtFromArray(milestoneList, "title", milestoneStr)
-    var label = document.getElementById("select-label").value;
+    var label = document.getElementById("select-label-chart").value;
 		var startDate = milestone.start_date;
 		var endDate   = milestone.due_date;
 
@@ -53,7 +53,7 @@ function dataCreae(burndownReturn){
 	var holidayList = burndownReturn.holidayList
 
   var todayDate = dateToStr(new Date());
-  var label = document.getElementById("select-label").value;
+  var label = document.getElementById("select-label-chart").value;
   var milestoneStr = selectMilestone;
 
   //日付のリストを作成
@@ -190,7 +190,7 @@ function chartCreateBurnDown(labels, issueCount, allData, compEstimate, compIssu
 				{
 					label: '残作業量（理想）',
 					data: compEstimate,
-					borderColor: "gray",
+					borderColor: "rgba(60,60,60,1)",
 					backgroundColor: "rgba(0,0,0,0)",
 					lineTension:0, //ベジェ曲線の張り具合。 0（ゼロ）を指定すると直線になる
           yAxisID: "y-axis-1", // 追加

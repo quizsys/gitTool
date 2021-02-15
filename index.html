@@ -95,13 +95,19 @@
         </td>
       </tr>
       <tr>
-        <td class="table-secondary">②マイルストーンを選択</td>
+        <td class="table-secondary">③マイルストーンを選択</td>
         <td>
           <select id="select-milestone"></select>
         </td>
       </tr>
       <tr>
-        <td class="table-secondary">④ISSUEの名前を入力</td>
+        <td class="table-secondary">④ラベルを選択<br>（Ctrl押しながらで複数選択可）</td>
+        <td>
+          <select id="select-label" multiple></select>
+        </td>
+      </tr>
+      <tr>
+        <td class="table-secondary">⑤ISSUEの名前を入力</td>
         <td>
           <input type="text" id="issue-name" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
         </td>
@@ -118,7 +124,7 @@
   <ul>
     <li><a id="plan" href="" target="_blank">ISSUE作成スケジューラーを表示</a></li>
   </ul>
-
+  
   <br>
   <br>
   <hr>
@@ -126,7 +132,7 @@
 
   <h4>バーンダウンチャートを表示</h4>
 
-  <select id="select-label"></select>
+  <select id="select-label-chart"></select>
   <button class="btn btn-primary" onclick="getInfoBurnDownChart()">表示</button><br />
   <canvas id="burnDownChart"></canvas>
 

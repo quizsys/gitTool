@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "v4"   // このスクリプトのバージョン
+const RELEASE_VERSION = "v7"   // このスクリプトのバージョン
 var labelIssueList                       // label別issueの一覧配列
 var compFlg = false            // issueとMRの集計完了フラグ
 var issueList = []             // issueの一覧
@@ -435,10 +435,14 @@ function writeMilestoneList(data){
 		array[data[i].id].title = data[i].title
 	}
 	var html = "";
+	var lastMilestoneTitle = ""
 	for(var i in array){
 		html += "<option value='" + array[i].title +"'>" + array[i].title + "</option>";
+		lastMilestoneTitle =  array[i].title
 	}
+	
   document.getElementById("milestone").innerHTML = html;
+  document.getElementById("milestone").value = lastMilestoneTitle
 
   //テンプレート作成用
   html = "<option value='0'>--マイルストーン未選択--</option>";
@@ -458,7 +462,7 @@ function getProjectList(){
   var method = "GET";
   var successFunc = writeProjectsList;
   var url =  "/groups/" + GROUP_ID + "/projects";
-  var request = "private_token=" + TOKEN;
+  var request = "private_token=" + TOKEN + "&per_page=100";
   sendAjaxRequest(method, url, request, successFunc)
 
 }
@@ -538,11 +542,12 @@ function createIssue(data){
     milestone = "&milestone_id=" + milestone_id;
   }
 
+  var labels = getSelectLabels();
 
 	var method = "POST";
 	var successFunc = writeCreateIssueResult;
  	var url = "/projects/" + project_id + "/issues";
-	var request = "private_token=" + TOKEN + "&title=" + encodeURIComponent(issue) + "&description=" + description + milestone
+	var request = "private_token=" + TOKEN + "&title=" + encodeURIComponent(issue) + "&description=" + description + milestone + "&labels=" + encodeURIComponent(labels);
 	sendAjaxRequest(method, url, request, successFunc)
 
 }
@@ -738,6 +743,13 @@ function getTemplateList(){
  	var url = "/projects/" + project_id + "/repository/tree/";
  	var request = "private_token=" + TOKEN + "&path=" + encodeURIComponent(templatePath) + "&ref=master";
 	sendAjaxRequest(method, url, request, successFunc, failFunc)
+
+
+	//プロジェクトが選択されている場合は、それに紐づくlabelを取得する
+	if(document.getElementById("select-project").value != 0){
+		getlabels()	
+	}
+
 }
 
 /**
@@ -780,6 +792,63 @@ function writeTemplateList(data){
   // console.log(array)
   document.getElementById("select-template").innerHTML = html;
 }
+
+
+
+
+/*
+* ラベルの一覧を取得
+*/
+function getlabels(){
+
+     var project_id = document.getElementById("select-project").value
+
+
+	var method = "GET";
+	var successFunc = writeLabelList;
+
+ 	var url = "/projects/" + project_id + "/labels";
+ 	var request = "private_token=" + TOKEN + "&per_page=100";
+	sendAjaxRequest(method, url, request, successFunc)
+
+}
+
+
+
+/**
+* ラベル一覧を更新する
+*/
+function writeLabelList(data){
+
+	console.log(data)
+	var html = "";
+	for(var i in data){
+	html += "<option value='" + data[i].name +"'>" + data[i].name + "</option>";
+	}
+	document.getElementById("select-label").innerHTML = html;
+
+}
+
+
+function getSelectLabels(){
+
+  var e = document.getElementById('select-label');
+  var str = ""
+
+  //optionを順番に見て、selectedとなっているものの添え字を配列にいれる
+  for(var i = 0; i < e.childElementCount; i++){
+  	var eOption = e.getElementsByTagName('option')[i];
+    if(eOption.selected){
+      str += eOption.value + ",";
+    }
+  }
+  console.log(str);
+  return str;
+
+
+}
+
+
 
 
 /***********************************************************
@@ -997,7 +1066,8 @@ function updateLabelSelect(){
   for(var i in labelIssueList){
     html += "<option value='" + i  + "'>" + i + "</option>";
   }
-  document.getElementById("select-label").innerHTML = html
+  document.getElementById("select-label-chart").innerHTML = html
+  document.getElementById("select-label-chart").value = "すべて" //初期値設定
 }
 
 /**
@@ -1006,6 +1076,8 @@ function updateLabelSelect(){
 function setApiLink(){
   document.getElementById("plan").href= API_URL + "/plan"
 }
+
+
 
 
 console.log("read completed")
