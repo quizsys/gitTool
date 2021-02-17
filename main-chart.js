@@ -87,11 +87,12 @@ function dataCreae(burndownReturn){
     label: d.name,
     timeEstimate: d.time_estimate,
 		compTimeEstimate: d.comp_time_estimate,
+		uncompTimeSpent: d.uncomp_time_spent,
     // totalTimeSpent: d.total_time_spent,
     totalTimeSpentMergeRequest:0
   }
   data.push(todayData)
-  // console.log(data)
+  console.log(data)
 
   //グラフ用のデータを準備
   var labels = []
@@ -136,7 +137,8 @@ function dataCreae(burndownReturn){
     labels.push(dateList[i])
 
     if(d != null){
-			allData.push(ceil((d.timeEstimate - d.compTimeEstimate) / 3600, 2))
+			// allData.push(ceil((d.timeEstimate - d.compTimeEstimate) / 3600, 2))
+			allData.push(ceil((d.timeEstimate - d.compTimeEstimate - d.uncompTimeSpent) / 3600, 2))
       issueCount.push(d.allIssueCount - d.compIssueCount)
 			compIssueCount.push(d.compIssueCount)
     }

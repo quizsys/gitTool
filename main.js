@@ -229,7 +229,8 @@ function summaryTime(data){
     name: "すべて",
     time_estimate: 0,
     total_time_spent: 0,
-    comp_time_estimate: 0
+    comp_time_estimate: 0,
+    uncomp_time_spent : 0
   }
 
   for(var i in data){
@@ -251,6 +252,13 @@ function summaryTime(data){
     }
 
 
+    //burndown用
+    var uncomp_time_spent = data[i].time_stats.total_time_spent
+    if(uncomp_time_spent > data[i].time_stats.time_estimate * 0.9){
+      uncomp_time_spent = data[i].time_stats.time_estimate * 0.9
+    }
+
+
     // idがない場合
     if(!array[id]){
       array[id] = {}
@@ -260,6 +268,7 @@ function summaryTime(data){
       array[id].total_time_spent = 0
       array[id].comp_issue_count = 0
       array[id].comp_time_estimate = 0
+      array[id].uncomp_time_spent = 0
     }
 
     array[id].issue_count++;
@@ -268,6 +277,8 @@ function summaryTime(data){
     if(compFlg){
       array[id].comp_issue_count ++
       array[id].comp_time_estimate += data[i].time_stats.time_estimate
+    } else {
+      array[id].uncomp_time_spent += uncomp_time_spent
     }
 
 
@@ -299,6 +310,8 @@ function summaryTime(data){
       if(compFlg){
         labelArray[labels[j]].comp_issue_count ++
         labelArray[labels[j]].comp_time_estimate += data[i].time_stats.time_estimate
+      } else {
+        labelArray[labels[j]].uncomp_time_spent += uncomp_time_spent
       }
     }
 
@@ -309,8 +322,9 @@ function summaryTime(data){
     if(compFlg){
       allLabel.comp_issue_count ++
       allLabel.comp_time_estimate += data[i].time_stats.time_estimate
+    } else {
+      allLabel.uncomp_time_spent += uncomp_time_spent
     }
-
   }
   ret.array = array
   ret.labelArray = labelArray
@@ -440,7 +454,7 @@ function writeMilestoneList(data){
 		html += "<option value='" + array[i].title +"'>" + array[i].title + "</option>";
 		lastMilestoneTitle =  array[i].title
 	}
-	
+
   document.getElementById("milestone").innerHTML = html;
   document.getElementById("milestone").value = lastMilestoneTitle
 
@@ -747,7 +761,7 @@ function getTemplateList(){
 
 	//プロジェクトが選択されている場合は、それに紐づくlabelを取得する
 	if(document.getElementById("select-project").value != 0){
-		getlabels()	
+		getlabels()
 	}
 
 }
