@@ -11,6 +11,10 @@
   <script src="common.js"></script>
   <script src="main.js"></script>
   <script src="main-chart.js"></script>
+  <style>
+    label { white-space: nowrap; margin-right: 15px;} /* チェックボックスの折り返しを防ぐ */
+  </style>
+
 </head>
 <body>
 
@@ -75,47 +79,101 @@
   <input id="search-issue-name" placeholder="名前でフィルター" onchange="changeSearchIssueName()"></input>
   <div id="createIssueResultContinue" style="color:red"></div>
 
-	<br>
-	<br>
+  	<br>
+  	<br>
 
-  <h4>テンプレートから作成</h4>
-  <table class="table" border="1">
-    <tbody>
-      <tr>
-        <td class="table-secondary">①プロジェクトを選択</td>
-        <td>
-          <select id="select-project" onchange="getTemplateList()"></select>
-        </td>
-      </tr>
-      <tr>
-        <td class="table-secondary">②テンプレートを選択</td>
-        <td>
-          <select id="select-template"></select><br />
-          <input type="checkbox" id="global-template-flg" onchange="getTemplateList()" />グローバルテンプレートを使用
-        </td>
-      </tr>
-      <tr>
-        <td class="table-secondary">③マイルストーンを選択</td>
-        <td>
-          <select id="select-milestone"></select>
-        </td>
-      </tr>
-      <tr>
-        <td class="table-secondary">④ラベルを選択<br>（Ctrl押しながらで複数選択可）</td>
-        <td>
-          <select id="select-label" multiple></select>
-        </td>
-      </tr>
-      <tr>
-        <td class="table-secondary">⑤ISSUEの名前を入力</td>
-        <td>
-          <input type="text" id="issue-name" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <button class="btn btn-success" onclick="getTemplate()">作成</button>
-  <div id="createIssueResult" style="color:red"></div>
+    <h4>テンプレートから作成</h4>
+    <table class="table" border="1">
+      <tbody>
+        <tr>
+          <td class="table-secondary">①プロジェクトを選択</td>
+          <td>
+            <select id="select-project" onchange="getTemplateList()"></select>
+          </td>
+        </tr>
+        <tr>
+          <td class="table-secondary">②テンプレートを選択</td>
+          <td>
+            <select id="select-template"></select><br />
+            <input type="checkbox" id="global-template-flg" onchange="getTemplateList()" />グローバルテンプレートを使用
+          </td>
+        </tr>
+        <tr>
+          <td class="table-secondary">③マイルストーンを選択</td>
+          <td>
+            <select id="select-milestone"></select>
+          </td>
+        </tr>
+        <tr>
+          <td class="table-secondary">④ラベルを選択<br>（Ctrl押しながらで複数選択可）</td>
+          <td>
+            <select id="select-label" multiple></select>
+          </td>
+        </tr>
+        <tr>
+          <td class="table-secondary">⑤ISSUEの名前を入力</td>
+          <td>
+            <input type="text" id="issue-name" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn btn-success" onclick="getTemplate()">作成</button>
+    <div id="createIssueResult" style="color:red"></div>
+
+    	<br>
+    	<br>
+
+      <h4>ISSUEを複写して作成</h4>
+
+      <select id="select-project-copy"></select>
+      #
+      <input type="number" id="issue-number-copy"/>
+      <button class="btn btn-primary" id="get-issue-copy-btn" onclick="copyIssue()">①複写</button>
+
+      <div id="copy-issue-zone" style="display:none">
+        <table class="table" border="1" >
+          <tbody>
+          <tr>
+            <td class="table-secondary">②ISSUEの名前を入力</td>
+            <td>
+              <input type="text" id="issue-name-copy" placeholder="ISSUEの名前を入力してください" style="width:50vw"/>
+            </td>
+          </tr>
+            <tr>
+              <td class="table-secondary">③アサインを選択</td>
+              <td>
+                <select id="select-assignee-copy" ></select>
+              </td>
+            </tr>
+            <tr>
+              <td class="table-secondary">④マイルストーンを選択</td>
+              <td>
+                <select id="select-milestone-copy"></select>
+              </td>
+            </tr>
+            <tr>
+              <td class="table-secondary">⑤ラベルを選択</td>
+              <td id="labels-checkbox-copy">
+      			  </td>
+            </tr>
+            <tr>
+              <td class="table-secondary">⑥estimateを設定</td>
+              <td><input type="number" id="estimate-time-copy" min= "0" max= "25" step="0.25" />H
+              </td>
+            </tr>
+            <tr>
+              <td class="table-secondary">⑦リンク設定</td>
+              <td>
+                <input type="checkbox" id="link-copy" checked />複写元のISSUEのリンクをコピーする<br />
+                <input type="checkbox" id="link-origin-copy" checked />複写元のISSUEへのリンクを追加する
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn btn-success" id="create-issue-copy-btn" onclick="createCopyIssue()">⑧作成</button>
+        <div id="createCopyIssueResult" style="color:red"></div>
+      </div>
 
   <br>
   <br>
@@ -124,7 +182,7 @@
   <ul>
     <li><a id="plan" href="" target="_blank">ISSUE作成スケジューラーを表示</a></li>
   </ul>
-  
+
   <br>
   <br>
   <hr>

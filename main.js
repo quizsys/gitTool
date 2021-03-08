@@ -464,6 +464,7 @@ function writeMilestoneList(data){
 		html += "<option value='" + i +"'>" + array[i].title + "</option>";
 	}
 	document.getElementById("select-milestone").innerHTML = html;
+	document.getElementById("select-milestone-copy").innerHTML = html;
 
   milestoneList = data;
 }
@@ -490,6 +491,8 @@ function writeProjectsList(data){
     html += "<option value='" + data[i].id +"'>" + data[i].name + "</option>";
   }
   document.getElementById("select-project").innerHTML = html;
+  document.getElementById("select-project-copy").innerHTML = html;
+
 
   var array = {}
   for(var i in data){
@@ -863,6 +866,408 @@ function getSelectLabels(){
 }
 
 
+/***********************************************************
+* ISSUE複製
+*************************************************************/
+
+//前回のissueの番号
+var copyIssueId = 0
+//新しいissueの番号
+var newCopyIssueId = 0
+//issueのプロジェクトID
+var copyIssueProjectId = 0
+// 残りのループ回数
+var restLoopCountCopy = 0
+// 前回のissuenの情報
+var copyIssueAssignee = 0
+var copyIssueLabel = null
+var copyIssueMilestone = 0
+var copyIssueDescription = ""
+
+/**
+* 複写元ISSUEの情報を取得する
+*/
+function copyIssue(){
+
+  var project_id =  document.getElementById("select-project-copy").value;
+  var iid = document.getElementById("issue-number-copy").value;
+
+  if(project_id == 0){
+    alert("プロジェクトを選択してください")
+    return false;
+  } else if(!iid){
+    alert("ISSUE番号を入力してください")
+    return false;
+  }
+
+  // ボタンを非活性にする
+  document.getElementById("get-issue-copy-btn").disabled = true;
+
+
+  var method = "GET";
+  var successFunc = writeCopyIssue;
+  var falseFunc = notFoundIssue;
+  var url = "/projects/" + project_id + "/issues/" + iid;
+  var request = "private_token=" + TOKEN
+  sendAjaxRequest(method, url, request, successFunc, falseFunc)
+
+}
+
+
+function notFoundIssue(data){
+  // console.log(data)
+
+  // ボタンを活性にする
+  document.getElementById("get-issue-copy-btn").disabled = false;
+
+  alert("その番号のISSUEは存在しません。複写元のISSUE番号（#〇）を確認してください。")
+}
+
+
+/**
+* 継続ISSUEを作成する
+*/
+function writeCopyIssue(data){
+
+  console.log(data)
+
+  // 複写ボードを表示する
+  document.getElementById("copy-issue-zone").style.display = "inline"
+
+
+  copyIssueAssignee = 0
+  if(data.assignees.length != 0){
+    copyIssueAssignee = data.assignees[0].id
+  }
+
+  copyIssueLabel = data.labels
+  copyIssueMilestone = 0
+  if(data.milestone != null){
+    copyIssueMilestone = data.milestone.id
+  }
+
+  copyIssueDescription =  data.description
+
+  //すでに同じプロジェクトの情報を取得済みの場合
+  var sameProjectFlg = false
+  if(copyIssueProjectId == data.project_id){
+    sameProjectFlg = true
+  }
+
+
+  //元issueの番号を保存
+  copyIssueId = data.iid
+  copyIssueProjectId = data.project_id
+
+  //データをセット
+  document.getElementById("issue-name-copy").value = data.title
+  document.getElementById("estimate-time-copy").value = round(data.time_stats.time_estimate / 3600, 2)
+  document.getElementById("select-milestone-copy").value = copyIssueMilestone
+
+
+  //プロジェクトの情報を取得
+  if(!sameProjectFlg){
+    getlabelsCopy()
+    getUsersCopy()
+  } else {
+    //情報取得済みの時、設定のみ
+    resetLabelCopy()
+    resetUsersCopy()
+    setLabelCopy()
+    setUsersCopy()
+  }
+    // ボタンを活性にする
+    document.getElementById("get-issue-copy-btn").disabled = false;
+}
+
+
+/*
+* ラベルの一覧を取得
+*/
+function getlabelsCopy(){
+
+   var project_id = copyIssueProjectId
+
+	var method = "GET";
+	var successFunc = writeLabelListCopy;
+
+ 	var url = "/projects/" + project_id + "/labels";
+ 	var request = "private_token=" + TOKEN + "&per_page=100";
+	sendAjaxRequest(method, url, request, successFunc)
+
+}
+
+
+
+/**
+* ラベル一覧を更新する
+*/
+function writeLabelListCopy(data){
+
+
+  var html = "";
+  for(var i in data){
+    html += "<label><input type='checkbox' name='labels' value='" + data[i].name +"'>" + data[i].name + "</label>"
+  }
+  document.getElementById("labels-checkbox-copy").innerHTML = html;
+  setLabelCopy()
+}
+
+/*
+* ラベルの初期化処理
+*/
+function setLabelCopy(){
+
+  if(copyIssueLabel != null && copyIssueLabel.length != 0){
+    var labelArr = copyIssueLabel
+    var allLabels = document.getElementById("labels-checkbox-copy").childNodes;
+
+    for(var i in labelArr){
+      for(var j in allLabels){
+        // console.log(allLabels[j].childNodes)
+        if(allLabels[j].childNodes != undefined && allLabels[j].childNodes[0].value == labelArr[i]){
+          allLabels[j].childNodes[0].checked = true
+        }
+      }
+    }
+  }
+}
+
+/*
+* ラベルを未選択にする処理
+*/
+function resetLabelCopy(){
+  var allLabels = document.getElementById("labels-checkbox-copy").childNodes;
+  for(var j in allLabels){
+    if(allLabels[j].childNodes != undefined){
+      allLabels[j].childNodes[0].checked = false
+    }
+  }
+}
+
+
+
+
+
+/*
+* ユーザの一覧を取得
+*/
+function getUsersCopy(){
+
+   var project_id = copyIssueProjectId
+
+	var method = "GET";
+	var successFunc = writeUsersCopy;
+
+ 	var url = "/projects/" + project_id + "/users";
+ 	var request = "private_token=" + TOKEN + "&per_page=100";
+	sendAjaxRequest(method, url, request, successFunc)
+
+}
+
+
+
+/**
+* ユーザ一覧を更新する
+*/
+function writeUsersCopy(data){
+
+
+  var html = "<option value='0'>未割当</option>";
+  for(var i in data){
+    html += "<option value='" + data[i].id +"'>" + data[i].name + "</option>";
+  }
+  document.getElementById("select-assignee-copy").innerHTML = html;
+  setUsersCopy()
+
+}
+
+
+/*
+* ユーザの初期化処理
+*/
+function setUsersCopy(){
+
+  if(copyIssueAssignee != 0){
+    document.getElementById("select-assignee-copy").value = copyIssueAssignee
+  }
+}
+
+/*
+* ユーザを未選択にする処理
+*/
+function resetUsersCopy(){
+    document.getElementById("select-assignee-copy").value = 0
+}
+
+
+
+/**
+* 複写ISSUEを作成する
+*/
+function createCopyIssue(){
+
+  // ボタンを非活性にする
+  document.getElementById("create-issue-copy-btn").disabled = true;
+
+
+  var project_id = copyIssueProjectId
+  var title = document.getElementById("issue-name-copy").value;
+  var description = copyIssueDescription
+
+  // ラベルの取得
+  var labels = ""
+  $('input[name="labels"]:checked').each(function() {
+      labels += $(this).val() + ","
+  });
+  if(labels.length > 0){
+    labels = labels.slice(0, labels.length -1)
+  }
+
+  var assignee = ""
+  if(document.getElementById("select-assignee-copy").value != 0){
+    assignee = "&assignee_ids=" + document.getElementById("select-assignee-copy").value
+  }
+
+  var milestone = ""
+  if(document.getElementById("select-milestone-copy").value != 0){
+    milestone = "&milestone_id=" + document.getElementById("select-milestone-copy").value
+  }
+
+  var method = "POST";
+  var successFunc = writecreateIssueResultCopy;
+  var url = "/projects/" + project_id + "/issues";
+  var request = "private_token=" + TOKEN + "&title=" + encodeURIComponent(title) + "&description=" + encodeURIComponent(description) + "&labels=" + encodeURIComponent(labels) + assignee + milestone
+  sendAjaxRequest(method, url, request, successFunc)
+
+}
+
+
+/**
+* 継続ISSUEの作成結果を出力する
+*/
+function writecreateIssueResultCopy(data){
+
+  console.log(data)
+  var id = data.iid;
+  var title = data.title;
+  var web_url = data.web_url;
+  var html = "<a href='" + web_url + "' target='_blank'>#" + id + " : " + title + "</a> を作成しました"
+  document.getElementById("createCopyIssueResult").innerHTML = html;
+
+  newCopyIssueId = id
+  // estimateの設定
+  if(document.getElementById("estimate-time-copy").value > 0){
+    setEstimateTimeCopy(document.getElementById("estimate-time-copy").value)
+  }
+
+  //リンクの設定
+  if(document.getElementById("link-copy").checked == true ){
+    // 元のISSUEのリンクをコピー
+    getIssueLinksCopy()
+  } else if(document.getElementById("link-origin-copy").checked == true) {
+    // 元のISSUEへのリンクを追加
+    createIssueLinksCopy([])
+  } else {
+    // リンク追加無し
+    resetGrobalCopyValiable()
+  }
+}
+
+
+/**
+* リンクの取得
+*/
+function setEstimateTimeCopy(time_estimate){
+
+    var method = "POST";
+    var successFunc = sysout;
+    var url = "/projects/" + copyIssueProjectId + "/issues/" + newCopyIssueId + "/time_estimate";
+    var request = "private_token=" + TOKEN + "&duration=" + time_estimate + "h"
+    sendAjaxRequest(method, url, request, successFunc)
+}
+
+
+
+/**
+* リンクの取得
+*/
+function getIssueLinksCopy(){
+
+    var method = "GET";
+    var successFunc = createIssueLinksCopy;
+    var url = "/projects/" + copyIssueProjectId + "/issues/" + copyIssueId + "/links";
+    var request = "private_token=" + TOKEN;
+    sendAjaxRequest(method, url, request, successFunc)
+}
+
+
+/**
+* リンクの設定
+*/
+function createIssueLinksCopy(data){
+
+    //ループ用にデータを格納する
+    var ids = [];
+
+    // 元のISSUEへのリンクを追加
+    if(document.getElementById("link-origin-copy").checked == true){
+      ids.push(copyIssueId)
+    }
+
+    // データを格納
+    for(var i in data){
+      var id = data[i].iid;
+      ids.push(id)
+    }
+
+    //ループ回数を定義（非同期処理のカウンター）
+    restLoopCountCopy = ids.length
+
+    // 設定がなしであれば中断
+    if(restLoopCountCopy == 0){
+      resetGrobalCopyValiable()
+      return false;
+    }
+
+    var method = "POST";
+    var successFunc = createIssueLinksResultCopy;
+    var url = "/projects/" + copyIssueProjectId + "/issues/" + newCopyIssueId + "/links";
+
+    //処理を実施
+    for(var i = 0; i< ids.length ;i++){
+      var request = "private_token=" + TOKEN + "&target_project_id=" + copyIssueProjectId + "&target_issue_iid=" + ids[i] ;
+      sendAjaxRequest(method, url, request, successFunc)
+    }
+}
+
+/**
+* リンク作成の結果を取得、すべてのリンクを作成したら、ボタンを元に戻す
+*/
+function createIssueLinksResultCopy(data){
+    restLoopCountCopy--
+    console.log("リンク作成中 残りループ：" + restLoopCountCopy)
+    if(restLoopCountCopy == 0){
+      //初期化
+      resetGrobalCopyValiable()
+    }
+};
+
+/*
+* 変数の初期化
+*/
+function resetGrobalCopyValiable(){
+  // copyIssueAssignee = 0
+  // copyIssueLabel = null
+  // copyIssueMilestone = 0
+  // copyIssueId = 0
+  // copyIssueProjectId = 0
+  // copyIssueDescription = ""
+
+  // ボタンを非活性を解除する
+  document.getElementById("create-issue-copy-btn").disabled = false;
+
+}
 
 
 /***********************************************************
