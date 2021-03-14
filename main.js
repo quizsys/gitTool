@@ -9,6 +9,7 @@ var projectList = {}
 var labelChart
 var milestoneList
 var selectMilestone
+var userList = {}
 
 // /**
 // * Ajax通信用のメソッド
@@ -198,11 +199,16 @@ function writeResult(){
   updateLabelSelect();
 
   //出力
-  document.getElementById("result").innerHTML = updateIssueTable(array)
+  document.getElementById("result").innerHTML = updateIssueTableUser(array)
   document.getElementById("result-by-tags").innerHTML = updateIssueTable(labelArray)
 
   //Issue一覧を作成
   createIssueList("");
+
+  // user一覧を作成
+  for(var i in array){
+    userList[i] = array[i].name
+  }
 
   //更新時刻を更新
   document.getElementById("update-date-time").innerHTML = "更新日時： " + getNow();
@@ -346,7 +352,23 @@ function updateIssueTable(array){
 		html += "<td>" + round(array[i].time_estimate / 3600, 2) + "</td>";
 		html += "<td>" + round(array[i].total_time_spent / 3600, 2) + "</td>";
 		html += "<td>" + round(array[i].merge_request_total_time_spent / 3600, 2) + "</td>";
-		html += "</tr>"
+  }
+  return html;
+}
+
+/*
+* issue/MRの表を更新するhtmlを返却(user表用)
+*/
+function updateIssueTableUser(array){
+  var html = "";
+  for(var i in array){
+		html += "<tr>"
+		html += "<td>" + array[i].name + "</td>";
+		html += "<td>" + array[i].issue_count + "</td>";
+		html += "<td>" + round(array[i].time_estimate / 3600, 2) + "</td>";
+		html += "<td>" + round(array[i].total_time_spent / 3600, 2) + "</td>";
+		html += "<td>" + round(array[i].merge_request_total_time_spent / 3600, 2) + "</td>";
+    html += "<td>" + "<button class='btn btn-primary' onclick='getInfoParsonChart(" + i + ")'>詳細</button>" + "</td>";
   }
   return html;
 }

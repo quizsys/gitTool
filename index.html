@@ -7,10 +7,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   <script src="config.js"></script>
   <script src="common.js"></script>
   <script src="main.js"></script>
   <script src="main-chart.js"></script>
+  <script src="main-chart-parson.js"></script>
   <style>
     label { white-space: nowrap; margin-right: 15px;} /* チェックボックスの折り返しを防ぐ */
   </style>
@@ -35,11 +37,16 @@
 		  	<th>estimate(h)</th>
 		  	<th>spend(h)</th>
 		  	<th>spendMR(h)</th>
+		  	<th>ボタン</th>
 		  </tr>
 		</thead>
 		<tbody id="result">
 		</tbody>
 	</table>
+
+    <div>
+      <canvas id="pasonIssueChart"></canvas>
+    </div>
 
 
   <br>
