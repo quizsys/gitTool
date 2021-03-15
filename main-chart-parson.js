@@ -379,6 +379,26 @@ var colorList = [
 	[	210	,	105	,	30],  //	chocolate
 	[	240	,	128	,	128],  //	lightcoral
 	[	128	,	128	,	128],  //	gray
+  [	222	,	184	,	135	],  //	burlywood
+  [	220	,	20	,	60	],  //	crimson
+  [	189	,	183	,	107	],  //	darkkhaki
+  [	153	,	50	,	204	],  //	darkorchid
+  [	30	,	144	,	255	],  //	dodgerblue
+  [	255	,	250	,	240	],  //	floralwhite
+  [	34	,	139	,	34	],  //	forestgreen
+  [	255	,	0	,	255	],  //	fuchsia
+  [	255	,	160	,	122	],  //	lightsalmon
+  [	119	,	136	,	153	],  //	lightslategray
+  [	50	,	205	,	50	],  //	limegreen
+  [	25	,	25	,	112	],  //	midnightblue
+  [	255	,	228	,	181	],  //	moccasin
+  [	107	,	142	,	35	],  //	olivedrab
+  [	152	,	251	,	152	],  //	palegreen
+  [	176	,	224	,	230	],  //	powderblue
+  [	160	,	82	,	45	],  //	sienna
+  [	0	,	128	,	128	],  //	teal
+  [	245	,	245	,	245	],  //	whitesmoke
+  [	255	,	255	,	0	],  //	yellow
 ]
 
 
