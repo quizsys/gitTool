@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gitlab tools</title>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.4.1/core.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.0/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+  <script src="../config.js"></script>
+  <script src="../common.js"></script>
+  <script src="main-check-chart.js"></script>
+  <style>
+    label { white-space: nowrap; margin-right: 15px;} /* チェックボックスの折り返しを防ぐ */
+  </style>
+
+</head>
+<body>
+
+  <h1>チャートを表示</h1>
+  <!-- <h4>バーンダウンチャートを表示</h4> -->
+  <canvas id="chart"></canvas>
+
+</body>
+
+<script>
+  window.onload = function() {
+    getInfoCheck()
+  }
+</script>
+
+</html>
